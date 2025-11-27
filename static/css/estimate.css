@@ -1,0 +1,15 @@
+:root{
+  --brand1: #0062cc;
+  --brand2: #6610f2;
+}
+body{background:#f4f6fb;font-family:Inter,system-ui,Arial,sans-serif}
+.bg-gradient{background: linear-gradient(90deg,var(--brand1),var(--brand2));}
+.hero{background: linear-gradient(180deg, rgba(0,0,0,0.05), transparent);}
+.card{border-radius:12px}
+#result-card{min-height:140px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.display-6{font-size:1.8rem}
+footer{background:transparent}
+
+@media (max-width:768px){
+  .display-6{font-size:1.4rem}
+}

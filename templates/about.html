@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}About - House Price Predictor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .about-section {
+        margin-bottom: 2rem;
+    }
+    
+    .about-section h2 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+    }
+    
+    .about-section p {
+        line-height: 1.6;
+        color: #555;
+        margin-bottom: 1rem;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    
+    .feature-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #3498db;
+    }
+    
+    .feature-card h3 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    
+    .tech-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .tech-badge {
+        background: #3498db;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .stat-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #3498db;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1>About This Project</h1>
+        <p>Learn about our AI-powered house price prediction system</p>
+    </div>
+    
+    <div class="card-content">
+        <div class="about-section">
+            <h2>Project Overview</h2>
+            <p>
+                This House Price Prediction system uses advanced machine learning algorithms to provide accurate 
+                property valuations based on various factors such as location, size, amenities, and market conditions. 
+                Built with modern web technologies and trained on comprehensive Indian housing market data.
+            </p>
+        </div>
+        
+        <div class="about-section">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>🤖 AI-Powered Predictions</h3>
+                    <p>Uses Random Forest algorithm trained on 250,000+ property records for accurate price estimation.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📊 Interactive Analytics</h3>
+                    <p>Comprehensive data visualization and market trend analysis with dynamic charts and graphs.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🗃️ Extensive Dataset</h3>
+                    <p>Browse and explore the complete housing dataset with advanced filtering and pagination.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎯 High Accuracy</h3>
+                    <p>Achieves 99%+ accuracy with R² score of 0.996 using ensemble learning techniques.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🌐 Web-Based Interface</h3>
+                    <p>Modern, responsive web application accessible from any device with real-time predictions.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📈 Market Insights</h3>
+                    <p>Detailed analytics on price trends, location-based pricing, and property type distributions.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="about-section">
+            <h2>Technology Stack</h2>
+            <div class="tech-stack">
+                <span class="tech-badge">Python</span>
+                <span class="tech-badge">Flask</span>
+                <span class="tech-badge">Scikit-learn</span>
+                <span class="tech-badge">Pandas</span>
+                <span class="tech-badge">Matplotlib</span>
+                <span class="tech-badge">HTML5</span>
+                <span class="tech-badge">CSS3</span>
+                <span class="tech-badge">JavaScript</span>
+                <span class="tech-badge">Random Forest</span>
+            </div>
+        </div>
+        
+        <div class="about-section">
+            <h2>Dataset Information</h2>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number">250K+</div>
+                    <div class="stat-label">Property Records</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">28</div>
+                    <div class="stat-label">States Covered</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">23</div>
+                    <div class="stat-label">Data Features</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99.6%</div>
+                    <div class="stat-label">Model Accuracy</div>
+                </div>
+            </div>
+            
+            <p>
+                The dataset includes comprehensive information about Indian residential properties including:
+                location details (state, city), property specifications (BHK, size, type), 
+                amenities (parking, security, furnishing), infrastructure (schools, hospitals, transport), 
+                and market factors (owner type, availability status).
+            </p>
+        </div>
+        
+        <div class="about-section">
+            <h2>Machine Learning Model</h2>
+            <p>
+                Our prediction system employs a Random Forest Regressor, an ensemble learning method that 
+                combines multiple decision trees to provide robust and accurate predictions. The model has been 
+                trained and validated on historical housing data with the following performance metrics:
+            </p>
+            
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number">8.92</div>
+                    <div class="stat-label">RMSE (Lakhs)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">6.92</div>
+                    <div class="stat-label">MAE (Lakhs)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">0.996</div>
+                    <div class="stat-label">R² Score</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100</div>
+                    <div class="stat-label">Decision Trees</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="about-section">
+            <h2>How It Works</h2>
+            <p>
+                <strong>1. Data Input:</strong> Users provide property details through an intuitive web form.<br>
+                <strong>2. Feature Engineering:</strong> The system processes and encodes categorical variables.<br>
+                <strong>3. Model Prediction:</strong> The trained Random Forest model generates price predictions.<br>
+                <strong>4. Result Display:</strong> Users receive instant, accurate price estimates with confidence metrics.
+            </p>
+        </div>
+        
+        <div class="about-section">
+            <h2>Use Cases</h2>
+            <p>
+                This system is designed for various stakeholders in the real estate ecosystem:
+                property buyers and sellers for market valuation, real estate agents for pricing guidance,
+                financial institutions for loan assessments, property developers for market analysis,
+                and researchers studying housing market trends.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

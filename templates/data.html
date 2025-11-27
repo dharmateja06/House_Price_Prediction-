@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Data - House Price Predictor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .data-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .search-box {
+        padding: 10px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        min-width: 200px;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .pagination button {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .pagination button:hover:not(:disabled) {
+        background: #3498db;
+        color: white;
+    }
+    
+    .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .pagination .current {
+        background: #3498db;
+        color: white;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .data-table th {
+        background: #f8f9fa;
+        font-weight: bold;
+        color: #333;
+        position: sticky;
+        top: 0;
+    }
+    
+    .data-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .table-container {
+        max-height: 600px;
+        overflow-y: auto;
+        border-radius: 8px;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .info-text {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1>Dataset Explorer</h1>
+        <p>Browse and explore the housing dataset</p>
+    </div>
+    
+    <div class="card-content">
+        <div class="data-controls">
+            <div class="info-text" id="data-info">
+                Loading data information...
+            </div>
+            
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+        
+        <div class="table-container" id="table-container" style="display: none;">
+            <table class="data-table" id="data-table">
+                <thead id="table-header">
+                    <!-- Headers will be populated by JavaScript -->
+                </thead>
+                <tbody id="table-body">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let perPage = 25;
+    
+    async function loadData(page = 1) {
+        try {
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('table-container').style.display = 'none';
+            
+            const response = await fetch(`/api/data?page=${page}&per_page=${perPage}`);
+            const result = await response.json();
+            
+            currentPage = result.page;
+            totalPages = result.total_pages;
+            
+            // Update info text
+            const startRecord = (currentPage - 1) * perPage + 1;
+            const endRecord = Math.min(currentPage * perPage, result.total);
+            document.getElementById('data-info').textContent = 
+                `Showing ${startRecord}-${endRecord} of ${result.total.toLocaleString()} records`;
+            
+            // Populate table
+            populateTable(result.data);
+            
+            // Update pagination
+            updatePagination();
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('table-container').style.display = 'block';
+            
+        } catch (error) {
+            document.getElementById('loading').innerHTML = '<p>Error loading data. Please try again.</p>';
+        }
+    }
+    
+    function populateTable(data) {
+        if (data.length === 0) return;
+        
+        const tableHeader = document.getElementById('table-header');
+        const tableBody = document.getElementById('table-body');
+        
+        // Create headers (only once)
+        if (tableHeader.children.length === 0) {
+            const headerRow = document.createElement('tr');
+            const keys = Object.keys(data[0]);
+            
+            // Show only important columns
+            const importantColumns = ['ID', 'State', 'City', 'Property_Type', 'BHK', 'Size_in_SqFt', 'Price_in_Lakhs', 'Furnished_Status', 'Year_Built'];
+            const columnsToShow = keys.filter(key => importantColumns.includes(key));
+            
+            columnsToShow.forEach(key => {
+                const th = document.createElement('th');
+                th.textContent = key.replace(/_/g, ' ');
+                headerRow.appendChild(th);
+            });
+            
+            tableHeader.appendChild(headerRow);
+        }
+        
+        // Clear existing data
+        tableBody.innerHTML = '';
+        
+        // Populate data
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            const columnsToShow = ['ID', 'State', 'City', 'Property_Type', 'BHK', 'Size_in_SqFt', 'Price_in_Lakhs', 'Furnished_Status', 'Year_Built'];
+            
+            columnsToShow.forEach(key => {
+                const td = document.createElement('td');
+                let value = row[key];
+                
+                // Format specific columns
+                if (key === 'Price_in_Lakhs' && value) {
+                    value = '₹' + parseFloat(value).toFixed(2);
+                } else if (key === 'Size_in_SqFt' && value) {
+                    value = parseInt(value).toLocaleString() + ' sq ft';
+                }
+                
+                td.textContent = value || 'N/A';
+                tr.appendChild(td);
+            });
+            
+            tableBody.appendChild(tr);
+        });
+    }
+    
+    function updatePagination() {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+        
+        // Previous button
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '← Previous';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => {
+            if (currentPage > 1) {
+                loadData(currentPage - 1);
+            }
+        };
+        pagination.appendChild(prevBtn);
+        
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        if (startPage > 1) {
+            const firstBtn = document.createElement('button');
+            firstBtn.textContent = '1';
+            firstBtn.onclick = () => loadData(1);
+            pagination.appendChild(firstBtn);
+            
+            if (startPage > 2) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '8px';
+                pagination.appendChild(dots);
+            }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.className = i === currentPage ? 'current' : '';
+            pageBtn.onclick = () => loadData(i);
+            pagination.appendChild(pageBtn);
+        }
+        
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '8px';
+                pagination.appendChild(dots);
+            }
+            
+            const lastBtn = document.createElement('button');
+            lastBtn.textContent = totalPages;
+            lastBtn.onclick = () => loadData(totalPages);
+            pagination.appendChild(lastBtn);
+        }
+        
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next →';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => {
+            if (currentPage < totalPages) {
+                loadData(currentPage + 1);
+            }
+        };
+        pagination.appendChild(nextBtn);
+    }
+    
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', () => loadData(1));
+</script>
+{% endblock %}

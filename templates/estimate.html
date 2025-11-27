@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>House Price Estimator — Pan-India & Bengaluru</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/estimate.css">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-gradient sticky-top">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/">🏠 HousePred</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/estimate">Estimate</a></li>
+            <li class="nav-item"><a class="nav-link" href="/analytics">Analytics</a></li>
+            <li class="nav-item"><a class="nav-link" href="/data">Data Browser</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero text-center text-white py-5">
+      <div class="container">
+        <h1 class="display-6">Accurate estimates — Pan-India & Bengaluru</h1>
+        <p class="lead mt-2">Choose a region, fill details, and get an instant estimate with a clean, responsive UI.</p>
+      </div>
+    </header>
+
+    <main class="container my-5">
+      <div class="row">
+        <div class="col-lg-7">
+          <div class="card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="mb-0">Estimate a Home Price</h4>
+              <div>
+                <select id="region" class="form-select form-select-sm">
+                  <option value="pan">Pan-India</option>
+                  <option value="bengaluru">Bengaluru (Karnataka)</option>
+                </select>
+              </div>
+            </div>
+
+            <form id="estimate-form">
+              <div id="common-fields" class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">BHK</label>
+                  <input name="bhk" id="bhk" class="form-control" type="number" min="1" value="2">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Total Sqft</label>
+                  <input name="total_sqft" id="total_sqft" class="form-control" type="number" value="1000" min="100">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Bathrooms</label>
+                  <input name="bath" id="bath" class="form-control" type="number" value="2" min="0">
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Property Type</label>
+                  <select id="property_type" name="property_type" class="form-select"></select>
+                </div>
+
+                <div class="col-md-4" id="state-container">
+                  <label class="form-label">State</label>
+                  <select id="state" name="state" class="form-select"></select>
+                </div>
+
+                <div class="col-md-4" id="area-type-container" style="display:none;">
+                  <label class="form-label">Area Type</label>
+                  <select id="area_type" name="area_type" class="form-select"></select>
+                </div>
+
+                <div class="col-md-8" id="location-container" style="display:none;">
+                  <label class="form-label">Location (Bengaluru)</label>
+                  <select id="location" name="location" class="form-select"></select>
+                </div>
+
+                <div class="col-12 text-end mt-3">
+                  <button id="estimate-btn" class="btn btn-primary">Get Estimate</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card shadow-sm p-4 text-center">
+            <h5 class="mb-3">Estimated Price</h5>
+            <div id="result-card" class="p-4 bg-light rounded">
+              <div id="result-value" class="display-6 fw-semibold">—</div>
+              <div id="result-sub" class="text-muted small">Fill the form to see the estimate</div>
+            </div>
+
+            <div class="mt-4 text-center small text-muted">Tip: For Bangalore-specific locations choose the Bengaluru region.</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="py-4 text-center text-muted small">Built with ❤️ — Local models for Bengaluru and Pan-India model</footer>
+
+    <script>
+      async function loadAllOptions(){
+        try{
+          const res = await fetch('/api/all/options');
+          const j = await res.json();
+          // pan options
+          const pan = j.pan || {};
+          const beng = j.bengaluru || {};
+
+          const stateEl = document.getElementById('state');
+          stateEl.innerHTML = '';
+          if(pan.State){
+            pan.State.forEach(s => { const o = document.createElement('option'); o.value=s; o.textContent=s; stateEl.appendChild(o) });
+          } else {
+            stateEl.innerHTML = '<option>Maharashtra</option>';
+          }
+
+          const propEl = document.getElementById('property_type');
+          propEl.innerHTML = '';
+          if(pan.Property_Type){ pan.Property_Type.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; propEl.appendChild(o) }) }
+
+          // bengaluru specific
+          const areaEl = document.getElementById('area_type');
+          areaEl.innerHTML = '';
+          if(beng.area_type){ beng.area_type.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; areaEl.appendChild(o) }) }
+
+          const locEl = document.getElementById('location');
+          locEl.innerHTML = '';
+          if(beng.location){ beng.location.forEach(l=>{ const o=document.createElement('option'); o.value=l; o.textContent=l; locEl.appendChild(o) }) }
+
+        }catch(e){ console.warn('options load failed', e); }
+      }
+
+      function setRegionUI(region){
+        const stateContainer = document.getElementById('state-container');
+        const areaContainer = document.getElementById('area-type-container');
+        const locContainer = document.getElementById('location-container');
+        if(region === 'bengaluru'){
+          stateContainer.style.display = 'none';
+          areaContainer.style.display = 'block';
+          locContainer.style.display = 'block';
+        } else {
+          stateContainer.style.display = 'block';
+          areaContainer.style.display = 'none';
+          locContainer.style.display = 'none';
+        }
+      }
+
+      document.getElementById('region').addEventListener('change', (e)=>{
+        setRegionUI(e.target.value);
+      });
+
+      document.getElementById('estimate-form').addEventListener('submit', async (ev)=>{
+        ev.preventDefault();
+        const region = document.getElementById('region').value;
+        const btn = document.getElementById('estimate-btn');
+        btn.disabled = true; btn.textContent = 'Estimating...';
+
+        const form = new FormData(ev.target);
+        const body = new URLSearchParams();
+        for(const pair of form.entries()) body.append(pair[0], pair[1]);
+
+        try{
+          let url = '/predict';
+          if(region === 'bengaluru') url = '/predict/bengaluru';
+          const res = await fetch(url, { method: 'POST', body });
+          const j = await res.json();
+          const val = document.getElementById('result-value');
+          const sub = document.getElementById('result-sub');
+          if(j.success){
+            val.textContent = `₹ ${j.prediction} Lakhs`;
+            sub.textContent = j.message || '';
+          } else {
+            val.textContent = '—';
+            sub.textContent = j.error || 'Prediction failed';
+          }
+        }catch(e){
+          document.getElementById('result-value').textContent = '—';
+          document.getElementById('result-sub').textContent = 'Network error';
+        } finally {
+          btn.disabled = false; btn.textContent = 'Get Estimate';
+        }
+      });
+
+      // init
+      setRegionUI('pan');
+      loadAllOptions();
+    </script>
+  </body>
+</html>

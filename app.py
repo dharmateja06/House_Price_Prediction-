@@ -3,8 +3,14 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
-import pickle
-import os
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import seaborn as sns
+import base64
+from io import BytesIO
+import json
+from bengaluru_model import train_bengaluru_model, predict_bengaluru_price
 
 app = Flask(__name__)
 
@@ -44,10 +50,27 @@ def load_model():
 
 # Load model and encoders
 model, encoders, feature_columns, data = load_model()
+bengaluru_model, bengaluru_encoders, bengaluru_features, bengaluru_data = train_bengaluru_model()
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
+@app.route('/data')
+def view_data():
+    return render_template('data.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/bengaluru')
+def bengaluru():
+    return render_template('bengaluru.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -112,20 +135,102 @@ def predict():
             'message': 'Error in prediction. Please check your inputs.'
         })
 
-@app.route('/api/options')
-def get_options():
-    """Get unique values for dropdown options"""
-    options = {}
+@app.route('/predict_bengaluru', methods=['POST'])
+def predict_bengaluru():
+    try:
+        form_data = request.form.to_dict()
+        prediction = predict_bengaluru_price(bengaluru_model, bengaluru_encoders, bengaluru_features, form_data)
+        
+        return jsonify({
+            'success': True,
+            'prediction': round(prediction, 2),
+            'message': f'Predicted Bengaluru house price: ₹{prediction:.2f} Lakhs'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Error in Bengaluru prediction. Please check your inputs.'
+        })
+
+@app.route('/api/data')
+def get_data():
+    """Get paginated data for table view"""
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
     
-    categorical_cols = ['State', 'Property_Type', 'Furnished_Status', 
-                       'Public_Transport_Accessibility', 'Parking_Space', 
-                       'Security', 'Facing', 'Owner_Type', 'Availability_Status']
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
     
-    for col in categorical_cols:
-        if col in data.columns:
-            options[col] = sorted(data[col].unique().tolist())
+    # Get subset of data
+    subset = data.iloc[start_idx:end_idx]
     
-    return jsonify(options)
+    return jsonify({
+        'data': subset.to_dict('records'),
+        'total': len(data),
+        'page': page,
+        'per_page': per_page,
+        'total_pages': (len(data) + per_page - 1) // per_page
+    })
+
+@app.route('/api/analytics')
+def get_analytics():
+    """Generate analytics charts"""
+    charts = {}
+    
+    # Price distribution
+    plt.figure(figsize=(10, 6))
+    plt.hist(data['Price_in_Lakhs'], bins=50, alpha=0.7, color='skyblue')
+    plt.title('Price Distribution')
+    plt.xlabel('Price (Lakhs)')
+    plt.ylabel('Frequency')
+    charts['price_dist'] = get_plot_url()
+    
+    # Price by State
+    plt.figure(figsize=(12, 6))
+    state_prices = data.groupby('State')['Price_in_Lakhs'].mean().sort_values(ascending=False).head(10)
+    state_prices.plot(kind='bar', color='lightcoral')
+    plt.title('Average Price by State (Top 10)')
+    plt.xlabel('State')
+    plt.ylabel('Average Price (Lakhs)')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    charts['price_by_state'] = get_plot_url()
+    
+    # BHK vs Price
+    plt.figure(figsize=(10, 6))
+    bhk_prices = data.groupby('BHK')['Price_in_Lakhs'].mean()
+    bhk_prices.plot(kind='bar', color='lightgreen')
+    plt.title('Average Price by BHK')
+    plt.xlabel('BHK')
+    plt.ylabel('Average Price (Lakhs)')
+    charts['bhk_vs_price'] = get_plot_url()
+    
+    # Property Type Distribution
+    plt.figure(figsize=(8, 8))
+    property_counts = data['Property_Type'].value_counts()
+    plt.pie(property_counts.values, labels=property_counts.index, autopct='%1.1f%%')
+    plt.title('Property Type Distribution')
+    charts['property_type_dist'] = get_plot_url()
+    
+    return jsonify(charts)
+
+@app.route('/api/bengaluru_localities')
+def get_bengaluru_localities():
+    """Get Bengaluru localities for dropdown"""
+    localities = ['Koramangala', 'Indiranagar', 'Whitefield', 'Electronic City', 'HSR Layout', 
+                 'Marathahalli', 'Sarjapur Road', 'Bannerghatta Road', 'Hebbal', 'Yeshwanthpur']
+    return jsonify(localities)
+
+def get_plot_url():
+    """Convert matplotlib plot to base64 string"""
+    img = BytesIO()
+    plt.savefig(img, format='png', bbox_inches='tight')
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode()
+    plt.close()
+    return plot_url
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
